@@ -6,4 +6,4 @@ seaborn
 matplotlib
 sklearn
 xlsxwriter
-numpy
+numpy==1.26.4
