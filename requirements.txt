@@ -5,3 +5,4 @@ pandas
 openai
 seaborn
 matplotlib
+sklearn
