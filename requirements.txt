@@ -4,6 +4,6 @@ pandas
 openai==0.28
 seaborn
 matplotlib
-sklearn
+scikit-learn
 xlsxwriter
 numpy==1.26.4
