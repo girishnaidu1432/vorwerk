@@ -2,7 +2,7 @@ streamlit
 joblib
 numpy
 pandas
-openai
+openai==0.28
 seaborn
 matplotlib
 sklearn
