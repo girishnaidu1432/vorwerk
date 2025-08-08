@@ -18,11 +18,16 @@ openai.api_type = 'azure'
 openai.api_version = '2024-02-15-preview'
 deployment_name = 'gpt'
 
-# --- Sidebar Inputs (always visible) ---
+# ------------------ Sidebar (always rendered) ------------------
 st.sidebar.header("🌍 Inputs for Monthly Sales Prediction (Tab 2)")
-selected_country_1 = st.sidebar.selectbox("Select Country", ["USA", "Malaysia", "Taiwan"])
-selected_product_1 = st.sidebar.selectbox("Select Product", ["Kobold", "Thermomix"])
-run_button = st.sidebar.button("Run Prediction", key="run_prediction_genai_tab2")
+st.session_state.selected_country_1 = st.sidebar.selectbox(
+    "Select Country", ["USA", "Malaysia", "Taiwan"], key="country_tab2"
+)
+st.session_state.selected_product_1 = st.sidebar.selectbox(
+    "Select Product", ["Kobold", "Thermomix"], key="product_tab2"
+)
+st.session_state.run_button_tab2 = st.sidebar.button("Run Prediction", key="run_prediction_genai_tab2")
+
 
 # ------------------ Helper: Cached Model Loaders ------------------
 @st.cache_resource
@@ -196,7 +201,9 @@ with tab2:
     else:
         st.success(f"✅ Loaded model: Best Performing Model")
 
-    if run_button:
+    if st.session_state.run_button_tab2:
+        selected_country_1 = st.session_state.selected_country_1
+        selected_product_1 = st.session_state.selected_product_1
         prompt_data = f"""
         Generate 3 rows of synthetic customer segment data for product '{selected_product_1}' in {selected_country_1}.
         Each row should include: Age_Bracket (25-45, 46-59, 60+), Income_Range (20K-40K, 40K-60K, 60K-80K, 80K+),
