@@ -18,6 +18,12 @@ openai.api_type = 'azure'
 openai.api_version = '2024-02-15-preview'
 deployment_name = 'gpt'
 
+# --- Sidebar Inputs (always visible) ---
+st.sidebar.header("🌍 Inputs for Monthly Sales Prediction (Tab 2)")
+selected_country_1 = st.sidebar.selectbox("Select Country", ["USA", "Malaysia", "Taiwan"])
+selected_product_1 = st.sidebar.selectbox("Select Product", ["Kobold", "Thermomix"])
+run_button = st.sidebar.button("Run Prediction", key="run_prediction_genai_tab2")
+
 # ------------------ Helper: Cached Model Loaders ------------------
 @st.cache_resource
 def load_model(path="best_model.pkl"):
@@ -180,12 +186,7 @@ with tab2:
     city_map = {'Tier-1': 3, 'Tier-2': 2, 'Tier-3': 1}
     product_map = {'Kobold': 0, 'Thermomix': 1}
 
-    # Sidebar inputs ONLY visible in Tab 2
-    with st.sidebar:
-        st.subheader("🌍 Inputs for Monthly Sales Prediction")
-        selected_country_1 = st.selectbox("Select Country", ["USA", "Malasiya", "Taiwan"])
-        selected_product_1 = st.selectbox("Select Product", ["Kobold", "Thermomix"])
-        run_button = st.button("Run Prediction", key="run_prediction_genai_tab2")
+    
 
     model_path = "lasso_regression_model.pkl"
     reg_model = load_regression_model(model_path)
@@ -193,7 +194,7 @@ with tab2:
     if isinstance(reg_model, Exception):
         st.error(f"❌ Could not load regression model: {model_path} -> {reg_model}")
     else:
-        st.success("✅ Loaded model: Best Performing Model")
+        st.success(f"✅ Loaded model: Best Performing Model")
 
     if run_button:
         prompt_data = f"""
@@ -238,9 +239,10 @@ with tab2:
             st.dataframe(df_gen_yes[['Age_Bracket', 'Income_Range', 'City_Tier',
                                      'Product Names', 'Predicted_Qty', 'Confidence']])
 
-            # Charts
+            # Charts in structured layout
             cols = st.columns(3)
             chart_cols = ['Age_Bracket', 'Income_Range', 'City_Tier']
+
             for i, col in enumerate(chart_cols):
                 with cols[i]:
                     fig, ax = plt.subplots(figsize=(4, 3))
@@ -257,6 +259,7 @@ with tab2:
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 df_gen.to_excel(writer, index=False, sheet_name='AI Data')
             output.seek(0)
+
             st.download_button(
                 "📥 Download as Excel",
                 data=output.getvalue(),
