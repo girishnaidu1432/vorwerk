@@ -18,10 +18,6 @@ openai.api_type = 'azure'
 openai.api_version = '2024-02-15-preview'
 deployment_name = 'gpt'
 
-st.sidebar.markdown("### 🌍 Inputs for Monthly Sales Prediction (Tab 2)")
-selected_country_1 = st.sidebar.selectbox("Select Country", ["USA", "Malasiya", "Taiwan"])
-selected_product_1 = st.sidebar.selectbox("Select Product", ["Kobold", "Thermomix"])
-run_button = st.sidebar.button("Run Prediction", key="run_prediction_genai_tab2")
 
 
 # ------------------ Helper: Cached Model Loaders ------------------
@@ -197,8 +193,7 @@ Please summarise the response as action items with a reasoning....."""
                             except Exception as e:
                                 st.error(f"❌ Error from Azure OpenAI: {str(e)}")
 
-# ======================================================================================
-# TAB 2: SYNTHETIC SALES PREDICTION (MONTHLY)
+
 # ======================================================================================
 with tab2:
     st.header("📈 Monthly Sales Prediction ")
@@ -271,3 +266,4 @@ with tab2:
 
         except Exception as e:
             st.error(f"❌ Error generating AI data or predictions: {e}")
+
