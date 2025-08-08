@@ -18,7 +18,10 @@ openai.api_type = 'azure'
 openai.api_version = '2024-02-15-preview'
 deployment_name = 'gpt'
 
-
+st.sidebar.markdown("### 🌍 Inputs for Monthly Sales Prediction (Tab 2)")
+selected_country_1 = st.sidebar.selectbox("Select Country", ["USA", "Malasiya", "Taiwan"])
+selected_product_1 = st.sidebar.selectbox("Select Product", ["Kobold", "Thermomix"])
+run_button = st.sidebar.button("Run Prediction", key=""📈 Sales Prediction")
 
 # ------------------ Helper: Cached Model Loaders ------------------
 @st.cache_resource
