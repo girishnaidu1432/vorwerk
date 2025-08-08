@@ -20,14 +20,20 @@ deployment_name = 'gpt'
 
 # ------------------ Sidebar (always rendered) ------------------
 st.sidebar.header("🌍 Inputs for Monthly Sales Prediction (Tab 2)")
+
+# Sidebar widgets with keys so Streamlit remembers their state
 st.session_state.selected_country_1 = st.sidebar.selectbox(
-    "Select Country", ["USA", "Malaysia", "Taiwan"], key="country_tab2"
+    "Select Country", ["USA", "Malaysia", "Taiwan"],
+    key="country_tab2"
 )
 st.session_state.selected_product_1 = st.sidebar.selectbox(
-    "Select Product", ["Kobold", "Thermomix"], key="product_tab2"
+    "Select Product", ["Kobold", "Thermomix"],
+    key="product_tab2"
 )
-st.session_state.run_button_tab2 = st.sidebar.button("Run Prediction", key="run_prediction_genai_tab2")
 
+# Button to run prediction
+if st.sidebar.button("Run Prediction", key="run_prediction_genai_tab2"):
+    st.session_state.run_tab2 = True  # store flag in session_state
 
 # ------------------ Helper: Cached Model Loaders ------------------
 @st.cache_resource
