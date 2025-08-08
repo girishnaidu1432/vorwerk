@@ -1,5 +1,3 @@
-# app_all_in_tabs_combined.py
-
 import streamlit as st
 import joblib
 import pandas as pd
@@ -18,8 +16,6 @@ openai.api_type = 'azure'
 openai.api_version = '2024-02-15-preview'
 deployment_name = 'gpt'
 
-
-
 # ------------------ Helper: Cached Model Loaders ------------------
 @st.cache_resource
 def load_model(path="best_model.pkl"):
@@ -37,7 +33,7 @@ def load_regression_model(path):
 
 # ------------------ Page Setup ------------------
 st.set_page_config(page_title="Vorwerk Sales Intelligence", layout="wide")
-st.title("📊 Vorwerk ML/GEN-AI Demos")
+st.title("📊 Vorwerk ML/GEN-AI Dashboard")
 
 # ------------------ Tab Setup ------------------
 tab1, tab2 = st.tabs(["🔮 Sales Closure", "📈 Sales Prediction"])
@@ -66,7 +62,6 @@ with tab1:
             st.dataframe(df1.head())
 
             if all(col in df1.columns for col in required_columns):
-            # Predict
                 if hasattr(model, "predict_proba"):
                     predictions = model.predict_proba(df1)[:, 1]
                 else:
@@ -76,15 +71,12 @@ with tab1:
                 df1['Closure_Prediction(%)'] = np.round(predictions * 100, 2)
                 df1['LikelyToClose'] = df1['Closure_Prediction(%)'] >= 70
 
-            # Show all data
                 st.success("✅ Predictions generated")
                 st.dataframe(df1.sort_values(by='Closure_Prediction(%)', ascending=False))
 
-            # Save only closed orders (≥70%)
                 closed_df = df1[df1['LikelyToClose']]
                 closed_df.to_csv("closed_orders_history.csv", index=False)
                 st.info(f"💾 {len(closed_df)} closed orders saved to closed_orders_history.csv")
-
 
     # STEP 2
     with tabs[1]:
@@ -148,7 +140,6 @@ These actions should be:
 - Data-driven
 - Personalized to the record's context
 - Feasible within the sales process
-Keep the response action-oriented, clear, and backed by feature-level insights.
 Please summarise the response as action items with a reasoning....."""
                         with st.spinner("Generating insights..."):
                             try:
@@ -179,9 +170,9 @@ with tab2:
     city_map = {'Tier-1': 3, 'Tier-2': 2, 'Tier-3': 1}
     product_map = {'Kobold': 0, 'Thermomix': 1}
 
-    # --- Inputs inside Tab 2 ---
+    # Input fields inside Tab 2 (instead of sidebar)
     st.subheader("🌍 Inputs for Monthly Sales Prediction")
-    selected_country_1 = st.selectbox("Select Country", ["USA", "Malaysia", "Taiwan"])
+    selected_country_1 = st.selectbox("Select Country", ["USA", "Malasiya", "Taiwan"])
     selected_product_1 = st.selectbox("Select Product", ["Kobold", "Thermomix"])
     run_button = st.button("Run Prediction", key="run_prediction_genai_tab2")
 
@@ -201,7 +192,6 @@ with tab2:
         Return data as a JSON array without any explanation.
         """
         try:
-            # Generate synthetic data using Azure OpenAI
             response = openai.ChatCompletion.create(
                 engine=deployment_name,
                 messages=[
@@ -215,31 +205,25 @@ with tab2:
             synthetic_data = json.loads(content)
             df_gen = pd.DataFrame(synthetic_data)
 
-            # Add extra columns for model
             df_gen['Product Names'] = selected_product_1
             df_gen['Age_Level'] = df_gen['Age_Bracket'].map(age_map)
             df_gen['Income_Level'] = df_gen['Income_Range'].map(income_map)
             df_gen['City_Tier_Level'] = df_gen['City_Tier'].map(city_map)
             df_gen['Product_Code'] = product_map[selected_product_1]
 
-            # Prediction
             features = df_gen[['Age_Group_Pct', 'Income_Pct', 'Age_Level', 'Income_Level', 'City_Tier_Level', 'Product_Code']]
             df_gen['Predicted_Qty'] = reg_model.predict(features).astype(int)
             df_gen['Purchase_Intent'] = df_gen['Predicted_Qty'].apply(lambda x: "Yes" if x > 5 else "No")
             df_gen['Confidence'] = df_gen['Predicted_Qty'].apply(lambda x: min(1.0, max(0.0, x / 10)))
 
-            # Filter only positive intent
             df_gen_yes = df_gen[df_gen['Purchase_Intent'] == "Yes"]
 
-            # --- Structured Output ---
             st.subheader("📊 Monthly Sales Predictor")
             st.dataframe(df_gen_yes[['Age_Bracket', 'Income_Range', 'City_Tier',
                                      'Product Names', 'Predicted_Qty', 'Confidence']])
 
-            # Charts in structured layout
             cols = st.columns(3)
             chart_cols = ['Age_Bracket', 'Income_Range', 'City_Tier']
-
             for i, col in enumerate(chart_cols):
                 with cols[i]:
                     fig, ax = plt.subplots(figsize=(4, 3))
@@ -251,7 +235,6 @@ with tab2:
                     ax.tick_params(axis='y', labelsize=8)
                     st.pyplot(fig)
 
-            # Download button
             output = BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 df_gen.to_excel(writer, index=False, sheet_name='AI Data')
