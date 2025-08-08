@@ -207,7 +207,7 @@ with tab2:
     else:
         st.success(f"✅ Loaded model: Best Performing Model")
 
-    if st.session_state.run_button_tab2:
+    if st.session_state.get("run_tab2", False):
         selected_country_1 = st.session_state.selected_country_1
         selected_product_1 = st.session_state.selected_product_1
         prompt_data = f"""
