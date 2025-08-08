@@ -196,25 +196,31 @@ Please summarise the response as action items with a reasoning....."""
 # ======================================================================================
 with tab2:
     st.header("📈 Monthly Sales Prediction ")
-    #st.markdown("Synthetic monthly customer-based sales prediction using Lasso regression model.")
 
+    # Encoding maps
     age_map = {'25-45': 1, '46-59': 2, '60+': 3}
     income_map = {'20K-40K': 1, '40K-60K': 2, '60K-80K': 3, '80K+': 4}
     city_map = {'Tier-1': 3, 'Tier-2': 2, 'Tier-3': 1}
     product_map = {'Kobold': 0, 'Thermomix': 1}
 
+    # Sidebar inputs (unique keys to avoid conflicts)
     st.sidebar.markdown("### 🌍 Inputs for Monthly Sales Prediction (Tab 2)")
-    selected_country_1 = st.sidebar.selectbox("Select Country", ["USA", "Malasiya", "Taiwan"])
-    selected_product_1 = st.sidebar.selectbox("Select Product", ["Kobold", "Thermomix"])
-    run_button = st.sidebar.button("Run Prediction", key="run_prediction_genai_tab2")
+    selected_country_1 = st.sidebar.selectbox(
+        "Select Country", ["USA", "Malasiya", "Taiwan"], key="country_tab2"
+    )
+    selected_product_1 = st.sidebar.selectbox(
+        "Select Product", ["Kobold", "Thermomix"], key="product_tab2"
+    )
+    run_button = st.sidebar.button("Run Prediction", key="run_prediction_tab2")
 
+    # Load model
     model_path = "lasso_regression_model.pkl"
     reg_model = load_regression_model(model_path)
 
     if isinstance(reg_model, Exception):
         st.error(f"❌ Could not load regression model: {model_path} -> {reg_model}")
     else:
-        st.success(f"✅ Loaded model: Best Performing Model")
+        st.success("✅ Loaded model: Best Performing Model")
 
     if run_button:
         prompt_data = f"""
@@ -251,18 +257,29 @@ with tab2:
             st.subheader("📊 Monthly Sales Predictor")
             st.dataframe(df_gen_yes[['Age_Bracket', 'Income_Range', 'City_Tier', 'Product Names', 'Predicted_Qty', 'Confidence']])
 
-            for col in ['Age_Bracket', 'Income_Range', 'City_Tier']:
-                fig, ax = plt.subplots()
-                sns.barplot(ax=ax, x=col, y='Predicted_Qty', data=df_gen_yes)
-                ax.set_title(f'Avg Predicted Qty by {col}')
-                st.pyplot(fig)
+            # Charts in 2 columns
+            cols = st.columns(2)
+            chart_columns = ['Age_Bracket', 'Income_Range', 'City_Tier']
+            for idx, col in enumerate(chart_columns):
+                with cols[idx % 2]:
+                    fig, ax = plt.subplots(figsize=(4, 3))
+                    sns.barplot(ax=ax, x=col, y='Predicted_Qty', data=df_gen_yes)
+                    ax.set_title(f'Avg Predicted Qty by {col}')
+                    st.pyplot(fig)
 
+            # Download Excel
             output = BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 df_gen.to_excel(writer, index=False, sheet_name='AI Data')
             output.seek(0)
-            st.download_button("📥 Download as Excel", data=output.getvalue(), file_name="ai_generated_predictions_tab2.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            st.download_button(
+                "📥 Download as Excel",
+                data=output.getvalue(),
+                file_name="ai_generated_predictions_tab2.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
 
         except Exception as e:
             st.error(f"❌ Error generating AI data or predictions: {e}")
+
 
