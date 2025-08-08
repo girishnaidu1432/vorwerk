@@ -18,7 +18,6 @@ openai.api_type = 'azure'
 openai.api_version = '2024-02-15-preview'
 deployment_name = 'gpt'
 
-
 # ------------------ Helper: Cached Model Loaders ------------------
 @st.cache_resource
 def load_model(path="best_model.pkl"):
@@ -55,31 +54,6 @@ with tab1:
     tabs = st.tabs(["⚙️ Step 1: Model Training", "🔍 Step 2: Sales Prediction", "🧠 Step 3: Sales Conversion"])
 
     # STEP 1
-    #with tabs[0]:
-        #st.header("⚙️ Step 1 - Model Training")
-        #model = load_model("best_model.pkl")
-        #upload1 = st.file_uploader("📁 Upload historical order data", type=["csv", "xlsx"])
-
-        #if model and upload1:
-            #df1 = pd.read_excel(upload1) if upload1.name.endswith(".xlsx") else pd.read_csv(upload1)
-            #st.dataframe(df1.head())
-
-            #if all(col in df1.columns for col in required_columns):
-                #if hasattr(model, "predict_proba"):
-                    #predictions = model.predict_proba(df1)[:, 1]
-                #else:
-                    #pred = model.predict(df1)
-                    #predictions = (pred - np.min(pred)) / (np.ptp(pred) if np.ptp(pred) != 0 else 1)
-
-                #df1['Closure_Prediction(%)'] = np.round(predictions * 100, 2)
-                #df1['LikelyToClose'] = df1['Closure_Prediction(%)'] >= 70
-                #closed_df = df1[df1['LikelyToClose'] == True]
-                #closed_df.to_csv("closed_orders_history.csv", index=False)
-                #st.success("✅ Closed orders saved to closed_orders_history.csv")
-                #st.dataframe(closed_df)
-
-
-    # STEP 1
     with tabs[0]:
         st.header("⚙️ Step 1 - Model Training")
         model = load_model("best_model.pkl")
@@ -87,11 +61,9 @@ with tab1:
 
         if model and upload1:
             df1 = pd.read_excel(upload1) if upload1.name.endswith(".xlsx") else pd.read_csv(upload1)
-            st.subheader("📄 Uploaded Data")
             st.dataframe(df1.head())
 
             if all(col in df1.columns for col in required_columns):
-            # Predict
                 if hasattr(model, "predict_proba"):
                     predictions = model.predict_proba(df1)[:, 1]
                 else:
@@ -100,16 +72,10 @@ with tab1:
 
                 df1['Closure_Prediction(%)'] = np.round(predictions * 100, 2)
                 df1['LikelyToClose'] = df1['Closure_Prediction(%)'] >= 70
-
-            # Show all data
-                st.success("✅ Predictions generated")
-                st.dataframe(df1.sort_values(by='Closure_Prediction(%)', ascending=False))
-
-            # Save only closed orders (≥70%)
-                closed_df = df1[df1['LikelyToClose']]
+                closed_df = df1[df1['LikelyToClose'] == True]
                 closed_df.to_csv("closed_orders_history.csv", index=False)
-                st.info(f"💾 {len(closed_df)} closed orders saved to closed_orders_history.csv")
-
+                st.success("✅ Closed orders saved to closed_orders_history.csv")
+                st.dataframe(closed_df)
 
     # STEP 2
     with tabs[1]:
@@ -192,7 +158,6 @@ Please summarise the response as action items with a reasoning....."""
                             except Exception as e:
                                 st.error(f"❌ Error from Azure OpenAI: {str(e)}")
 
-
 # ======================================================================================
 # TAB 2: SYNTHETIC SALES PREDICTION (MONTHLY)
 # ======================================================================================
@@ -205,7 +170,7 @@ with tab2:
     city_map = {'Tier-1': 3, 'Tier-2': 2, 'Tier-3': 1}
     product_map = {'Kobold': 0, 'Thermomix': 1}
 
-    st.header("### 🌍 Inputs for Monthly Sales Prediction (Tab 2)")
+    st.sidebar.markdown("### 🌍 Inputs for Monthly Sales Prediction (Tab 2)")
     selected_country_1 = st.sidebar.selectbox("Select Country", ["USA", "Malasiya", "Taiwan"])
     selected_product_1 = st.sidebar.selectbox("Select Product", ["Kobold", "Thermomix"])
     run_button = st.sidebar.button("Run Prediction", key="run_prediction_genai_tab2")
@@ -267,7 +232,3 @@ with tab2:
 
         except Exception as e:
             st.error(f"❌ Error generating AI data or predictions: {e}")
-
-
-
-
