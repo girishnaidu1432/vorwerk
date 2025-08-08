@@ -194,46 +194,22 @@ Please summarise the response as action items with a reasoning....."""
 
 
 # ======================================================================================
-import streamlit as st
-import pandas as pd
-import numpy as np
-import joblib
-import matplotlib.pyplot as plt
-
-# Function to load model
-@st.cache_resource
-def load_regression_model(path):
-    try:
-        return joblib.load(path)
-    except Exception as e:
-        return e
-
-# Tab selector in the main page
-tab1, tab2, tab3 = st.tabs(["Tab 1", "Monthly Sales Prediction", "Tab 3"])
-
-# Sidebar: choose tab (only Tab 2 has inputs)
-active_tab = st.session_state.get("active_tab", "Tab 1")
-
-# Tab 2 code
+# TAB 2: SYNTHETIC SALES PREDICTION (MONTHLY)
+# ======================================================================================
 with tab2:
-    st.header("📈 Monthly Sales Prediction")
+    st.header("📈 Monthly Sales Prediction ")
+    #st.markdown("Synthetic monthly customer-based sales prediction using Lasso regression model.")
 
-    # Sidebar inputs only for Tab 2
-    selected_country_1 = st.sidebar.selectbox(
-        "Select Country", ["USA", "Malasiya", "Taiwan"], key="country_tab2"
-    )
-    selected_product_1 = st.sidebar.selectbox(
-        "Select Product", ["Kobold", "Thermomix"], key="product_tab2"
-    )
-    run_button = st.sidebar.button("Run Prediction", key="run_prediction_tab2")
-
-    # Mappings
     age_map = {'25-45': 1, '46-59': 2, '60+': 3}
     income_map = {'20K-40K': 1, '40K-60K': 2, '60K-80K': 3, '80K+': 4}
     city_map = {'Tier-1': 3, 'Tier-2': 2, 'Tier-3': 1}
     product_map = {'Kobold': 0, 'Thermomix': 1}
 
-    # Load model
+    st.header("### 🌍 Inputs for Monthly Sales Prediction (Tab 2)")
+    selected_country_1 = st.sidebar.selectbox("Select Country", ["USA", "Malasiya", "Taiwan"])
+    selected_product_1 = st.sidebar.selectbox("Select Product", ["Kobold", "Thermomix"])
+    run_button = st.sidebar.button("Run Prediction", key="run_prediction_genai_tab2")
+
     model_path = "lasso_regression_model.pkl"
     reg_model = load_regression_model(model_path)
 
@@ -242,22 +218,56 @@ with tab2:
     else:
         st.success(f"✅ Loaded model: Best Performing Model")
 
-    # Prediction logic
     if run_button:
-        features = np.array([[age_map['25-45'], income_map['40K-60K'],
-                               city_map['Tier-1'], product_map[selected_product_1]]])
-        prediction = reg_model.predict(features)[0]
-        st.metric("Predicted Sales", f"{prediction:,.2f}")
+        prompt_data = f"""
+        Generate 3 rows of synthetic customer segment data for product '{selected_product_1}' in {selected_country_1}.
+        Each row should include: Age_Bracket (25-45, 46-59, 60+), Income_Range (20K-40K, 40K-60K, 60K-80K, 80K+),
+        City_Tier (Tier-1, Tier-2, Tier-3), Age_Group_Pct (0.1 to 0.9), Income_Pct (0.1 to 0.9), Product Names.
+        Return data as a JSON array without any explanation.
+        """
+        try:
+            response = openai.ChatCompletion.create(
+                engine=deployment_name,
+                messages=[
+                    {"role": "system", "content": "You are a helpful AI data assistant."},
+                    {"role": "user", "content": prompt_data}
+                ],
+                temperature=0.7,
+                max_tokens=1000
+            )
+            content = response['choices'][0]['message']['content']
+            synthetic_data = json.loads(content)
+            df_gen = pd.DataFrame(synthetic_data)
+            df_gen['Product Names'] = selected_product_1
+            df_gen['Age_Level'] = df_gen['Age_Bracket'].map(age_map)
+            df_gen['Income_Level'] = df_gen['Income_Range'].map(income_map)
+            df_gen['City_Tier_Level'] = df_gen['City_Tier'].map(city_map)
+            df_gen['Product_Code'] = product_map[selected_product_1]
 
-        # Chart
-        months = np.arange(1, 13)
-        sales = prediction + np.random.randn(12) * 1000
-        fig, ax = plt.subplots()
-        ax.plot(months, sales, marker='o')
-        ax.set_xlabel("Month")
-        ax.set_ylabel("Sales")
-        ax.set_title("Monthly Sales Forecast")
-        st.pyplot(fig)
+            features = df_gen[['Age_Group_Pct', 'Income_Pct', 'Age_Level', 'Income_Level', 'City_Tier_Level', 'Product_Code']]
+            df_gen['Predicted_Qty'] = reg_model.predict(features).astype(int)
+            df_gen['Purchase_Intent'] = df_gen['Predicted_Qty'].apply(lambda x: "Yes" if x > 5 else "No")
+            df_gen['Confidence'] = df_gen['Predicted_Qty'].apply(lambda x: min(1.0, max(0.0, x / 10)))
+
+            df_gen_yes = df_gen[df_gen['Purchase_Intent'] == "Yes"]
+            st.subheader("📊 Monthly Sales Predictor")
+            st.dataframe(df_gen_yes[['Age_Bracket', 'Income_Range', 'City_Tier', 'Product Names', 'Predicted_Qty', 'Confidence']])
+
+            for col in ['Age_Bracket', 'Income_Range', 'City_Tier']:
+                fig, ax = plt.subplots()
+                sns.barplot(ax=ax, x=col, y='Predicted_Qty', data=df_gen_yes)
+                ax.set_title(f'Avg Predicted Qty by {col}')
+                st.pyplot(fig)
+
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                df_gen.to_excel(writer, index=False, sheet_name='AI Data')
+            output.seek(0)
+            st.download_button("📥 Download as Excel", data=output.getvalue(), file_name="ai_generated_predictions_tab2.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+        except Exception as e:
+            st.error(f"❌ Error generating AI data or predictions: {e}")
+
 
 
 
