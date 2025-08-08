@@ -18,22 +18,16 @@ openai.api_type = 'azure'
 openai.api_version = '2024-02-15-preview'
 deployment_name = 'gpt'
 
-# ------------------ Sidebar (always rendered) ------------------
+# ------------------ Sidebar ------------------
 st.sidebar.header("🌍 Inputs for Monthly Sales Prediction (Tab 2)")
+if "run_tab2" not in st.session_state:
+    st.session_state.run_tab2 = False
 
-# Sidebar widgets with keys so Streamlit remembers their state
-st.session_state.selected_country_1 = st.sidebar.selectbox(
-    "Select Country", ["USA", "Malaysia", "Taiwan"],
-    key="country_tab2"
-)
-st.session_state.selected_product_1 = st.sidebar.selectbox(
-    "Select Product", ["Kobold", "Thermomix"],
-    key="product_tab2"
-)
+selected_country_1 = st.sidebar.selectbox("Select Country", ["USA", "Malaysia", "Taiwan"], key="country_tab2")
+selected_product_1 = st.sidebar.selectbox("Select Product", ["Kobold", "Thermomix"], key="product_tab2")
 
-# Button to run prediction
 if st.sidebar.button("Run Prediction", key="run_prediction_genai_tab2"):
-    st.session_state.run_tab2 = True  # store flag in session_state
+    st.session_state.run_tab2 = True
 
 # ------------------ Helper: Cached Model Loaders ------------------
 @st.cache_resource
@@ -185,19 +179,8 @@ Please summarise the response as action items with a reasoning....."""
 # ======================================================================================
 # TAB 2: SYNTHETIC SALES PREDICTION (MONTHLY)
 # ======================================================================================
-# ======================================================================================
-# TAB 2: SYNTHETIC SALES PREDICTION (MONTHLY)
-# ======================================================================================
 with tab2:
-    st.header("📈 Monthly Sales Prediction ")
-
-    # Mapping for encoding
-    age_map = {'25-45': 1, '46-59': 2, '60+': 3}
-    income_map = {'20K-40K': 1, '40K-60K': 2, '60K-80K': 3, '80K+': 4}
-    city_map = {'Tier-1': 3, 'Tier-2': 2, 'Tier-3': 1}
-    product_map = {'Kobold': 0, 'Thermomix': 1}
-
-    
+    st.header("📈 Monthly Sales Prediction")
 
     model_path = "lasso_regression_model.pkl"
     reg_model = load_regression_model(model_path)
@@ -205,11 +188,15 @@ with tab2:
     if isinstance(reg_model, Exception):
         st.error(f"❌ Could not load regression model: {model_path} -> {reg_model}")
     else:
-        st.success(f"✅ Loaded model: Best Performing Model")
+        st.success("✅ Loaded model: Best Performing Model")
 
-    if st.session_state.get("run_tab2", False):
-        selected_country_1 = st.session_state.selected_country_1
-        selected_product_1 = st.session_state.selected_product_1
+    if st.session_state.run_tab2:
+        # Mapping for encoding
+        age_map = {'25-45': 1, '46-59': 2, '60+': 3}
+        income_map = {'20K-40K': 1, '40K-60K': 2, '60K-80K': 3, '80K+': 4}
+        city_map = {'Tier-1': 3, 'Tier-2': 2, 'Tier-3': 1}
+        product_map = {'Kobold': 0, 'Thermomix': 1}
+
         prompt_data = f"""
         Generate 3 rows of synthetic customer segment data for product '{selected_product_1}' in {selected_country_1}.
         Each row should include: Age_Bracket (25-45, 46-59, 60+), Income_Range (20K-40K, 40K-60K, 60K-80K, 80K+),
@@ -217,7 +204,7 @@ with tab2:
         Return data as a JSON array without any explanation.
         """
         try:
-            # Generate synthetic data using Azure OpenAI
+            # Call Azure OpenAI
             response = openai.ChatCompletion.create(
                 engine=deployment_name,
                 messages=[
@@ -247,12 +234,12 @@ with tab2:
             # Filter only positive intent
             df_gen_yes = df_gen[df_gen['Purchase_Intent'] == "Yes"]
 
-            # --- Structured Output ---
+            # Display table
             st.subheader("📊 Monthly Sales Predictor")
             st.dataframe(df_gen_yes[['Age_Bracket', 'Income_Range', 'City_Tier',
                                      'Product Names', 'Predicted_Qty', 'Confidence']])
 
-            # Charts in structured layout
+            # Charts
             cols = st.columns(3)
             chart_cols = ['Age_Bracket', 'Income_Range', 'City_Tier']
 
@@ -267,7 +254,7 @@ with tab2:
                     ax.tick_params(axis='y', labelsize=8)
                     st.pyplot(fig)
 
-            # Download button
+            # Download Excel
             output = BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 df_gen.to_excel(writer, index=False, sheet_name='AI Data')
@@ -282,4 +269,3 @@ with tab2:
 
         except Exception as e:
             st.error(f"❌ Error generating AI data or predictions: {e}")
-
