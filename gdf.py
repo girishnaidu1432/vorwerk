@@ -35,7 +35,7 @@ def load_regression_model(path):
 
 # ------------------ Page Setup ------------------
 st.set_page_config(page_title="Vorwerk Sales Intelligence", layout="wide")
-st.title("📊 Vorwerk ML/GEN-AI Dashboard")
+st.title("📊 Vorwerk ML/GEN-AI Demos")
 
 # ------------------ Tab Setup ------------------
 tab1, tab2 = st.tabs(["🔮 Sales Closure", "📈 Sales Prediction"])
